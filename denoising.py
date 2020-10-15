@@ -27,27 +27,30 @@ torch.backends.cudnn.benchmark = True
 dtype = torch.cuda.FloatTensor
 import seaborn as sns
 
-import system
+import sys
 
 sns.set_style("darkgrid", {"axes.facecolor": ".9"})
 
 
 # display images
 def np_plot(np_matrix, title):
-    plt.clf()
-    fig = plt.imshow(np_matrix.transpose(1, 2, 0), interpolation='nearest')
-    fig.axes.get_xaxis().set_visible(False)
-    fig.axes.get_yaxis().set_visible(False)
-    plt.title(title)
-    plt.axis('off')
-    plt.pause(0.05)
+    return None
+    #plt.clf()
+    #fig = plt.imshow(np_matrix.transpose(1, 2, 0), interpolation='nearest')
+    #fig.axes.get_xaxis().set_visible(False)
+    #fig.axes.get_yaxis().set_visible(False)
+    #plt.title(title)
+    #plt.axis('off')
+    #plt.pause(0.05)
 
 
 # %% md
 ### Load images
 # %%
-image_name = "image_Peppers512rgb"
-fname = 'data/denoising/Dataset/%s.png' % image_name
+image_name = sys.argv[1]#"image_Peppers512rgb"
+fname = 'data/denoising/Dataset/%s' % image_name
+print("[*] file name : %s" % fname )
+print("[*] save name : %s" % "%s_sgld_mean.npy" % image_name.split(".")[0])
 imsize = -1
 sigma = 25 / 255.
 img_pil = crop_image(get_image(fname, imsize)[0], d=32)
@@ -157,10 +160,11 @@ print('Starting optimization with SGLD')
 optimizer = torch.optim.Adam(net2.parameters(), lr=LR, weight_decay=weight_decay)
 for j in range(num_iter):
     optimizer.zero_grad()
-    closure_sgld()
+    loss = closure_sgld()
+    print("[%d/%d] loss %.5f" %(j, num_iter, loss.item()), end = "\r")
     optimizer.step()
     add_noise(net2)
 
 sgld_mean = sgld_mean / sample_count
 sgld_mean_psnr = compare_psnr(img_np, sgld_mean)
-np.save("image_name_sgld_mean.npy", sgld_mean)
+np.save("%s_sgld_mean.npy" % image_name.split(".")[0], sgld_mean)
